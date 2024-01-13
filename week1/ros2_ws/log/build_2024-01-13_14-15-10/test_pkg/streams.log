@@ -1,0 +1,24 @@
+[0.716s] Invoking command in '/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/src/test_pkg': CONDA_PROMPT_MODIFIER=(base) PYTHONPATH=/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/prefix_override:/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/install/test_pkg/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/test_pkg build --build-base /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/build install --record /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/install.log --single-version-externally-managed
+[0.865s] running egg_info
+[0.865s] writing ../../build/test_pkg/test_pkg.egg-info/PKG-INFO
+[0.866s] writing dependency_links to ../../build/test_pkg/test_pkg.egg-info/dependency_links.txt
+[0.866s] writing entry points to ../../build/test_pkg/test_pkg.egg-info/entry_points.txt
+[0.866s] writing requirements to ../../build/test_pkg/test_pkg.egg-info/requires.txt
+[0.866s] writing top-level names to ../../build/test_pkg/test_pkg.egg-info/top_level.txt
+[0.889s] reading manifest file '../../build/test_pkg/test_pkg.egg-info/SOURCES.txt'
+[0.889s] writing manifest file '../../build/test_pkg/test_pkg.egg-info/SOURCES.txt'
+[0.889s] running build
+[0.889s] running build_py
+[0.889s] copying test_pkg/Question1_part3.py -> /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/build/lib/test_pkg
+[0.889s] running install
+[0.890s] running install_lib
+[0.891s] copying /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/build/lib/test_pkg/Question1_part3.py -> /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/install/test_pkg/lib/python3.8/site-packages/test_pkg
+[0.891s] byte-compiling /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/install/test_pkg/lib/python3.8/site-packages/test_pkg/Question1_part3.py to Question1_part3.cpython-38.pyc
+[0.894s] running install_data
+[0.894s] running install_egg_info
+[0.896s] removing '/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/install/test_pkg/lib/python3.8/site-packages/test_pkg-0.0.0-py3.8.egg-info' (and everything under it)
+[0.896s] Copying ../../build/test_pkg/test_pkg.egg-info to /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/install/test_pkg/lib/python3.8/site-packages/test_pkg-0.0.0-py3.8.egg-info
+[0.896s] running install_scripts
+[0.908s] Installing test script to /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/install/test_pkg/lib/test_pkg
+[0.908s] writing list of installed files to '/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/install.log'
+[0.926s] Invoked command in '/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/src/test_pkg' returned '0': CONDA_PROMPT_MODIFIER=(base) PYTHONPATH=/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/prefix_override:/home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/install/test_pkg/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/test_pkg build --build-base /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/build install --record /home/trung/Project/Study/1st_year/3rd_sem/fundamental_robotics/week1/ros2_ws/build/test_pkg/install.log --single-version-externally-managed

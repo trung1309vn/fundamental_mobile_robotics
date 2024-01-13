@@ -1,0 +1,3 @@
+[console_scripts]
+test = test_pkg.Question1_part3:main
+
