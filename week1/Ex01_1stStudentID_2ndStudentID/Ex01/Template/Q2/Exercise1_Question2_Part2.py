@@ -22,7 +22,8 @@ import matplotlib.pyplot as plt
 data = np.genfromtxt("discrete_random_variable.csv", delimiter=",")
 n = 50
 x_lin = np.linspace(np.min(data), np.max(data)+0.0000001, n+1)
-mean_lists = []
+interval = (np.max(data) - np.min(data)) / n
+mid_interval_lists = []
 norm_lists = []
 
 # For each interval
@@ -32,11 +33,14 @@ for i in range(n):
     # Get number of element in current interval
     num_val = len(values)
 
-    # Get mean
-    mean_val = np.mean(values)
-    print(mean_val)
-    mean_lists.append(mean_val)
-    norm_lists.append(mean_val/1000.0)
+    # Get middle interval
+    mid_interval_lists.append(x_lin[i]+interval/2)
+    norm_lists.append(num_val/len(data))
 
-plt.hist(mean_lists, norm_lists)
+print(np.sum(norm_lists))
+plt.bar(mid_interval_lists, norm_lists)
+plt.xlabel('x')
+plt.ylabel('Normalized Count')
+plt.title('Distribution of Random Numbers')
+plt.show()
 

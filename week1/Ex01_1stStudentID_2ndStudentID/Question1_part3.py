@@ -68,7 +68,13 @@ class WheelSpeedSubscriber(Node):
         plt.ylim((-0.5,0.5))
         plt.plot(np.array(self.forw_x_), np.array(self.forw_y_), '-b', label="forward euler")
         plt.plot(np.array(self.mid_x_), np.array(self.mid_y_), '--r', label="midpoint euler")
-        plt.arrow(self.mid_x_[-1], self.mid_y_[-1], 0.1, 0.1*np.tan(self.mid_theta_[-1]), width=0.001)
+        arrow_lenght = 1.0
+        x = self.mid_x_[-1]
+        y = self.mid_y_[-1]
+        theta = self.mid_theta_[-1]
+        x_arrow = x + arrow_lenght * np.cos(theta)
+        y_arrow = y + arrow_lenght * np.sin(theta)
+        plt.arrow(x, y, x_arrow, y_arrow)
         plt.draw()
         plt.pause(0.000000001)
 
