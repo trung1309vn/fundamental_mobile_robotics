@@ -25,6 +25,8 @@ x_lin = np.linspace(np.min(data), np.max(data)+0.0000001, n+1)
 interval = (np.max(data) - np.min(data)) / n
 mid_interval_lists = []
 norm_lists = []
+expectation = 0
+covariance = 0
 
 # For each interval
 for i in range(n):
@@ -37,7 +39,16 @@ for i in range(n):
     mid_interval_lists.append(x_lin[i]+interval/2)
     norm_lists.append(num_val/len(data))
 
+    # 
+    expectation += (x_lin[i]+interval/2) * num_val/len(data)
+
+# Covariance
+for i in range(n):
+    covariance += norm_lists[i]*(mid_interval_lists[i] - expectation)**2
+
 print(np.sum(norm_lists))
+print("Expectation: ", expectation)
+print("Covariance: ", covariance)
 plt.bar(mid_interval_lists, norm_lists)
 plt.xlabel('x')
 plt.ylabel('Normalized Count')

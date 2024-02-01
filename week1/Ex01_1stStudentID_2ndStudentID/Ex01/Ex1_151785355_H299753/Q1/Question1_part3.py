@@ -64,30 +64,32 @@ class WheelSpeedSubscriber(Node):
 
         # Draw
         plt.clf()
-        plt.xlim((-0.25,0.25))
-        plt.ylim((-0.1,0.5))
+        plt.xlim((-3.0,3.0))
+        plt.ylim((-1.0,3.0))
         plt.plot(np.array(self.forw_x_), np.array(self.forw_y_), '-b', label="forward euler")
         plt.plot(np.array(self.mid_x_), np.array(self.mid_y_), '--r', label="midpoint euler")
-        arrow_lenght = 0.02
+        arrow_lenght = 0.2
         x = self.mid_x_[-1]
         y = self.mid_y_[-1]
         theta = self.mid_theta_[-1]
         x_arrow = x + arrow_lenght * np.cos(theta)
         y_arrow = y + arrow_lenght * np.sin(theta)
         plt.plot([x, x_arrow],[y, y_arrow], '-.k', label="midpoint euler angle")
+        plt.scatter([x],[y], color='b')
         # plt.arrow(x, y, x_arrow, y_arrow)
         plt.legend(loc="upper left")
         plt.draw()
         plt.pause(0.000000001)
 
     def calc_euler(self, left_w, right_w, method):
-        
-        v = 0.5*self.r_*(left_w + right_w) 
-        omega = 1.0/self.d_*self.r_*(left_w + right_w)
-        curr_x = None
-        curr_y = None
-        curr_theta = None
-        curr_hat_theta = None
+    
+        v = 0.5*self.r_*(right_w + left_w)
+        omega = (self.r_/self.d_)*(right_w - left_w)
+
+        # for logging / debugging 
+        #m1 = "Values for left and right angular velocities: {} {}".format(left_w,right_w)
+        #m1 = "Values for next velocity and omega: {} {}".format(v,omega)
+        #self.get_logger().info(m1)
 
         if method == "forward":
             curr_x = self.forw_x_[-1]
@@ -100,27 +102,18 @@ class WheelSpeedSubscriber(Node):
             curr_theta = self.mid_theta_[-1]
             curr_hat_theta = curr_theta + 0.5 * omega * self.delta_
 
-        x_increment = v * self.delta_ * np.cos(curr_hat_theta)
-        y_increment = v * self.delta_ * np.sin(curr_hat_theta)
+        x_increment = v*self.delta_*cos(curr_hat_theta)
+        y_increment = v*self.delta_*sin(curr_hat_theta)
         theta_increment = omega * self.delta_
 
-        # if method == "forward":
-        #     ???
-        # elif method == "midpoint":
-        #     ???
-        
         next_x = curr_x + x_increment
         next_y = curr_y + y_increment
         next_theta = curr_theta + theta_increment
-        # print(method, ": ", next_x, " ", next_y, " ", next_theta)
         
+        #m2 = "Values for next x, y, theta: {} {} {} ".format(next_x, next_y, next_theta)
+        #self.get_logger().info(m2)
         return next_x, next_y, next_theta
         
-    def update_plot(self):
-        
-        self.path.set_data(np.array(self.forw_x_), np.array(self.forw_y_))
-        return self.path, 
-
 def main(args=None):
     rclpy.init(args=args)
     try:
