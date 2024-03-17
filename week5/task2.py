@@ -5,30 +5,35 @@ from library.detect_obstacle import DetectObstacle
 
 # Constants and Settings
 Ts = 0.01 # Update simulation every 10ms
-t_max = 10 # np.pi # total simulation duration in seconds
+t_max = 20 # np.pi # total simulation duration in seconds
 # Set initial state
 # init_state = np.array([1.5, -1., 0.]) # px, py, theta
-init_state = np.array([2., 1., 0.]) # px, py, theta
+init_state = np.array([2., -1., 0.]) # px, py, theta
 IS_SHOWING_2DVISUALIZATION = True
 
 # Define Field size for plotting (should be in tuple)
 field_x = (-2.5, 2.5)
 field_y = (-2, 2)
 
-robot_radius = 0.21
-d_safe = 0.5
-eps = 0.15
+# obstacle avoidance
+radius = 0.21
+max_trans = 0.5 # m/s
+max_rot = 5     # rad/s
+obst_radius = 0.5 # m
+d_des = 0.5      # desire distance from robot to obstacle
+eps = 0.15        # m
+p = np.array([[0.],[0.]]) # obstacle origin (0, 0)
+
+# rotation matrix constant
+R_clw  = np.array([[ 0.,  1.],
+                   [-1.,  0.]])
+R_cclw = np.array([[ 0., -1.],
+                   [ 1.,  0.]])
 
 # Define Obstacles 
 obst_vertices = np.array( [ [-1., 1.2], [1., 1.2], [1., 0.8], [0., 0.8], \
         [-.5, .5], [-.5, -.5], [0., -0.8], [1., -.8], [1., -1.2], 
         [-1., -1.2], [-1., 1.2]]) 
-# t = 0
-# obst_vertices = []
-# while t < 2*np.pi: 
-#     obst_vertices.append([0.5*np.cos(t), 0.5*np.sin(t)])
-#     t += 0.05
-# obst_vertices = np.asarray(obst_vertices)
 
 # Define sensor's sensing range and resolution
 sensing_range = 1. # in meter
@@ -59,7 +64,8 @@ def compute_sensor_endpoint(robot_state, sensors_dist):
     return obst_points[:2,:]
 
 
-def compute_control_input(desired_state, robot_state, obst_points, current_controller, current_time):
+def compute_control_input(desired_state, robot_state, wf_switch_state, wf_side,
+                          obst_points, current_controller, current_time):
     # Feel free to adjust the input and output of the function as needed.
     # And make sure it is reflected inside the loop in simulate_control()
 
@@ -69,41 +75,136 @@ def compute_control_input(desired_state, robot_state, obst_points, current_contr
     k0 = None    # k value for obstacle avoidance control
 
     # calculate obstacle distance to robot center
-    obst_distances = np.linalg.norm(obst_points.T - robot_state[:2], axis=1)
+    obst_points = obst_points.T
+    obst_distances = np.linalg.norm(obst_points - robot_state[:-1], axis=1)
+    # filter sensor
+    obst_points = obst_points[obst_distances < sensing_range - 1e-3]
+    obst_distances = obst_distances[obst_distances < sensing_range - 1e-3]
+    # print(obst_distances)
 
-    # switching control
+    # controller vector (without rotation)
+    # for switching state only
+    # print(robot_state[:-1] - obst_points)
+    u_gtg = desired_state[:-1] - robot_state[:-1]
+    u_avo = np.mean(robot_state[:-1] - obst_points, axis=0)
+    u_wfc = np.dot(R_clw, u_avo)
+    u_wfcc = np.dot(R_cclw, u_avo)
+    # print(u_avo)
+
+    # switching control: "gtg", "avo", "wf"
     # if currently use gtg control
     if (current_controller == "gtg"):
-        # Check if any sensing in obstacle d_safe zone
-        is_in_d_safe = np.sum(obst_distances < d_safe)
-        if (is_in_d_safe):
+        # Check if any sensing in obstacle (d_des + eps) zone
+        is_in_d_des = np.sum(obst_distances <= d_des + eps)
+        if (is_in_d_des):
+            current_controller = "wf"
+            wf_switch_state = robot_state
+            if (np.dot(u_wfc, u_gtg) >= 0):
+                wf_side = "clw"
+            else:
+                wf_side = "cclw"
+    # if currently use wf control
+    elif (current_controller == "wf"):
+        # Check if any sensing in obstacle d_des - eps zone
+        is_in_d_des = np.sum(obst_distances < d_des - eps)
+        if (is_in_d_des):
             current_controller = "avo"
+        else:
+            # Check if need to switch back to gtg
+            wf_2_goal = np.linalg.norm(wf_switch_state[:-1] - desired_state[:-1])
+            ro_2_goal = np.linalg.norm(robot_state[:-1] - desired_state[:-1])
+            if (wf_2_goal > ro_2_goal and np.dot(u_gtg, u_avo) >= 0):
+                current_controller = "gtg"
+            
+            is_in_d_des = np.sum(obst_distances <= d_des + eps)
+            if (not is_in_d_des):
+                current_controller = "gtg"
+
     # if currently use avo control
     else:
-        # Check if any sensing in obstacle d_safe + eps zone
-        is_in_d_safe_eps = np.sum(obst_distances < d_safe + eps)
-        if (not is_in_d_safe_eps):
-            current_controller = "gtg"
+        # Check if any sensing in obstacle d_des - eps zone
+        is_in_d_des = np.sum(obst_distances < d_des - eps)
+        if (not is_in_d_des):
+            current_controller = "wf"
 
     # Compute the control input based on current control
+    # Using gtg controllver
+    # print(current_controller, wf_side)
     if (current_controller == "gtg"):
         state_diff = desired_state - robot_state
         current_input = k_gain * state_diff
-    else:
-        # use only sensing in d_safe + eps zone
-        obst_dist = obst_distances[obst_distances < d_safe + eps]
+    # Using avo controllver
+    elif (current_controller == "avo"):
+        # use only sensing in d_des - eps zone
         c = 0.5
-        k0 = 1 / obst_dist * (c / (obst_dist**2 + eps)) 
-        state_diff = robot_state[:2] - obst_points.T[obst_distances < d_safe + eps]
+        obst_dists = obst_distances[obst_distances < d_des - eps]
+        k0 = 1 / obst_dists * (c / (obst_dists**2 + eps)) 
+        state_diff = robot_state[:2] - obst_points[obst_distances < d_des - eps]
         for k, state in zip(k0, state_diff):
-            print(k, state)
             current_input[:2] += k * state
 
         # averaging the avo control vector
         current_input[:2] /= k0.shape[0]
+    # Using wf controllver
+    else:
+        # Filter out beams > d_des + eps
+        obst_beams = obst_points[obst_distances <= d_des+eps]
+        obst_dists = obst_distances[obst_distances <= d_des+eps]
+        # If at least two beams in range
+        if (obst_beams.shape[0] >= 2):
+            # print("more than 2 beams")
+            # Get two shortest beam
+            indices = obst_dists.argsort()[:2]
+            indices.sort()
+            obst_beams = obst_beams[indices]
+            obst_dists = obst_dists[indices]
 
-    return current_input, current_controller
+            # u_avo
+            # u_avo = np.mean(robot_state[:-1] - obst_beams, axis=0)
 
+            # wall tangent vector
+            u_tangent = obst_beams[1] - obst_beams[0]
+            u_tangent = u_tangent / np.linalg.norm(u_tangent)
+            if (wf_side == "cclw"):
+                u_tangent *= -1
+
+            # wall perpendicular vector
+            ro_2_obst = obst_beams[0] - robot_state[:-1]
+            u_perpend = ro_2_obst - np.dot(ro_2_obst, u_tangent)*u_tangent
+            u_hat_perpend = u_perpend - d_des / np.linalg.norm(u_perpend) * u_perpend 
+
+        # Only one beam
+        else:
+            # print("one beam")
+            u_avo = robot_state[:-1] - obst_beams[0]
+            ro_2_obst = -u_avo
+            # print(u_avo)
+            if (wf_side == "clw"):
+                u_tangent = np.dot(R_clw, u_avo)
+            else:
+                u_tangent = np.dot(R_cclw, u_avo)
+            # print(u_tangent)
+            u_perpend = ro_2_obst
+            u_hat_perpend = u_perpend - d_des / np.linalg.norm(u_perpend) * u_perpend 
+
+
+        # wall following controller
+        u_wf = (u_hat_perpend + u_tangent) / 2.
+        current_input[0] = k_gain * u_wf[0]    
+        current_input[1] = k_gain * u_wf[1]
+        # print(u_tangent)
+        # print(u_hat_perpend)
+        # print(u_wf)
+
+    # clipping control input
+    max_vx = max_trans * abs(current_input[0]) / np.linalg.norm(current_input[:-1])
+    max_vy = max_trans * abs(current_input[1]) / np.linalg.norm(current_input[:-1])
+    control_signs = np.sign(current_input)
+    current_input[0] = control_signs[0] * min(abs(current_input[0]), max_vx)
+    current_input[1] = control_signs[1] * min(abs(current_input[1]), max_vy)
+    current_input[2] = control_signs[2] * min(abs(current_input[2]), max_rot)
+    # print(current_input)
+    return current_input, current_controller, wf_switch_state, wf_side
 
 # MAIN SIMULATION COMPUTATION
 #---------------------------------------------------------------------
@@ -112,7 +213,7 @@ def simulate_control():
 
     # Initialize robot's state (Single Integrator)
     robot_state = init_state.copy() # numpy array for [px, py, theta]
-    desired_state = np.array([-2., -1., 0.]) # numpy array for goal / the desired [px, py, theta]
+    desired_state = np.array([-2., 1., 0.]) # numpy array for goal / the desired [px, py, theta]
 
     # Store the value that needed for plotting: total step number x data length
     state_history = np.zeros( (sim_iter, len(robot_state)) ) 
@@ -121,7 +222,6 @@ def simulate_control():
 
     # Initiate the Obstacle Detection
     range_sensor = DetectObstacle( sensing_range, sensor_resolution)
-    # range_sensor.register_obstacle_bounded( obst_vertices )
     range_sensor.register_obstacle_bounded( obst_vertices )
 
 
@@ -147,6 +247,8 @@ def simulate_control():
         pl_txt = [sim_visualizer.ax.text(obst_points[0,i], obst_points[1,i], str(i)) for i in range(len(distance_reading))]
 
     current_controller = "gtg"
+    wf_switch_state = None
+    wf_side = None
     for it in range(sim_iter):
         current_time = it*Ts
         # record current state at time-step t
@@ -159,8 +261,9 @@ def simulate_control():
 
         # COMPUTE CONTROL INPUT
         #------------------------------------------------------------
-        current_input, current_controller = compute_control_input(desired_state, robot_state, obst_points, 
-                                                                  current_controller, current_time)
+        current_input, current_controller, wf_switch_state, wf_side = \
+            compute_control_input(desired_state, robot_state, wf_switch_state, wf_side, 
+                                  obst_points, current_controller, current_time)
         #------------------------------------------------------------
 
         # record the computed input at time-step t
